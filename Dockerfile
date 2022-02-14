@@ -1,25 +1,22 @@
-FROM icr.io/appcafe/open-liberty:full-java11-openj9-ubi
+FROM icr.io/appcafe/open-liberty:kernel-slim-java8-openj9-ubi
 
-ARG VERSION=1.0
-ARG REVISION=SNAPSHOT
+# Add Liberty server configuration including all necessary features
+COPY --chown=1001:0  src/main/liberty/config/server.xml /config/
 
-LABEL \
-  org.opencontainers.image.authors="Anusree" \
-  org.opencontainers.image.vendor="Open Liberty" \
-  org.opencontainers.image.url="local" \
-  org.opencontainers.image.source="https://github.com/anusree-mmlab/samplemicroprofile" \
-  org.opencontainers.image.version="$VERSION" \
-  org.opencontainers.image.revision="$REVISION" \
-  vendor="Open Liberty" \
-  name="demo" \
-  version="$VERSION-$REVISION" \
-  summary="Sample app" \
-  description="Sample app image"
+# Modify feature repository (optional)
+# A sample is in the 'Getting Required Features' section below
+#COPY --chown=1001:0 featureUtility.properties /opt/ol/wlp/etc/
 
-COPY --chown=1001:0 src/main/liberty/config /config/
+# This script will add the requested XML snippets to enable Liberty features and grow image to be fit-for-purpose using featureUtility.
+# Only available in 'kernel-slim'. The 'full' tag already includes all features for convenience.
+RUN features.sh
 
-COPY --chown=1001:0 target/demo.war /config/apps
+# Add interim fixes (optional)
+#COPY --chown=1001:0  interim-fixes /opt/ol/fixes/
 
-COPY --chown=1001:0 target/demo.jar /config/apps
+# Add app
+COPY --chown=1001:0  target/demo.war /config/apps/
+COPY --chown=1001:0  target/demo.jar /config/apps/
 
+# This script will add the requested server configurations, apply any interim fixes and populate caches to optimize runtime
 RUN configure.sh
